@@ -7,6 +7,10 @@ Express + MongoDB (Mongoose) API for a workshop repair-management system.
 - Copy `.env.example` → `.env` and fill values
 - Run: `npm start`
 
+## API Docs (Swagger)
+- Swagger UI: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/swagger/openapi.json`
+
 ## Bootstrapping (first superadmin)
 1) Create `.env` from `.env.example` and set at least: `MONGO_URI`, `JWT_SECRET`, `BOOTSTRAP_TOKEN`
 2) Start the server: `npm start`

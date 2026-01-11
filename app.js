@@ -5,10 +5,28 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const registerAppRoutes = require('./routes');
 const { connectToMongo } = require('./services/db/mongo');
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+const { APP_SWAGGER_DEFINITION } = require('./config/app');
 
 require('dotenv').config();
 
 const appServer = express();
+
+// Swagger docs (enabled by default; can disable by setting SWAGGER_ENABLED=false)
+const swaggerEnabled = (process.env.SWAGGER_ENABLED || 'true').toLowerCase() === 'true';
+if (swaggerEnabled) {
+  const swaggerOptions = {
+    swaggerDefinition: APP_SWAGGER_DEFINITION,
+    apis: ['./routes/**/*.js'],
+  };
+  const swaggerSpecs = swaggerJSDoc(swaggerOptions);
+  appServer.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+  appServer.get('/swagger/openapi.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpecs);
+  });
+}
 
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '').split(',').map(v => v.trim()).filter(Boolean);
 appServer.use(cors({

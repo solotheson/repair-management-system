@@ -7,6 +7,66 @@ const { requireAuth } = require('../../middlewares/auth');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /repair/v1/auth/login:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Login (email or telephone number)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [id, password]
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: Email or telephone number
+ *                 example: admin@example.com
+ *               password:
+ *                 type: string
+ *                 example: change_me
+ *     responses:
+ *       200:
+ *         description: Authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 access_token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     role: { type: string, example: superadmin }
+ *                     email: { type: string }
+ *                     telephone_number: { type: string, nullable: true }
+ *                     first_name: { type: string, nullable: true }
+ *                     last_name: { type: string, nullable: true }
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
+ *       403:
+ *         description: User inactive
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ForbiddenError'
+ *       422:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrors'
+ */
 router.post(
   '/login',
   [
@@ -42,6 +102,39 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * /repair/v1/auth/me:
+ *   get:
+ *     tags:
+ *       - Auth
+ *     summary: Get current user
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     role: { type: string }
+ *                     email: { type: string }
+ *                     telephone_number: { type: string, nullable: true }
+ *                     first_name: { type: string, nullable: true }
+ *                     last_name: { type: string, nullable: true }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
+ */
 router.get('/me', [requireAuth], async (req, res) => {
   const user = req.user;
   return res.status(200).send({

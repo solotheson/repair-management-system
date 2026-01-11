@@ -8,6 +8,68 @@ const workspaceMemberRepository = require('../../../repositories/workspaceMember
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /repair/admin/v1/workspaces:
+ *   post:
+ *     tags:
+ *       - Admin - Workspaces
+ *     summary: Create workspace (and owner membership)
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, owner]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Main Workshop
+ *               owner:
+ *                 type: object
+ *                 required: [email, password]
+ *                 properties:
+ *                   email: { type: string, example: owner@example.com }
+ *                   password: { type: string, example: change_me }
+ *                   first_name: { type: string, nullable: true }
+ *                   last_name: { type: string, nullable: true }
+ *                   telephone_number: { type: string, nullable: true }
+ *     responses:
+ *       201:
+ *         description: Workspace created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 workspace:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     name: { type: string }
+ *                     owner_user_id: { type: string }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
+ *       403:
+ *         description: Not superadmin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ForbiddenError'
+ *       422:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrors'
+ */
 router.post(
   '/',
   [

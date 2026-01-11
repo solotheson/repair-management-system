@@ -10,6 +10,73 @@ const beemService = require('../../../services/beem');
 
 const router = express.Router({ mergeParams: true });
 
+/**
+ * @swagger
+ * /repair/v1/workspaces/{workspace_id}/repairs:
+ *   get:
+ *     tags:
+ *       - Repairs
+ *     summary: List repairs in workspace
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: workspace_id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [in_progress, completed]
+ *     responses:
+ *       200:
+ *         description: Repair list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 repairs:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       status: { type: string, enum: [in_progress, completed] }
+ *                       customer:
+ *                         type: object
+ *                         properties:
+ *                           name: { type: string }
+ *                           telephone_number: { type: string }
+ *                       item:
+ *                         type: object
+ *                         properties:
+ *                           type: { type: string, nullable: true }
+ *                           brand: { type: string, nullable: true }
+ *                           model: { type: string, nullable: true }
+ *                           serial_number: { type: string, nullable: true }
+ *                       issue_description: { type: string }
+ *                       received_at: { type: string, format: date-time }
+ *                       completed_at: { type: string, format: date-time, nullable: true }
+ *                       created_at: { type: string, format: date-time }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/UnauthorizedError' }
+ *       403:
+ *         description: Not a workspace member
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ForbiddenError' }
+ *       422:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ValidationErrors' }
+ */
 router.get(
   '/',
   [
@@ -38,6 +105,76 @@ router.get(
   }
 );
 
+/**
+ * @swagger
+ * /repair/v1/workspaces/{workspace_id}/repairs:
+ *   post:
+ *     tags:
+ *       - Repairs
+ *     summary: Create a repair (optionally sends SMS)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: workspace_id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [customer, issue_description]
+ *             properties:
+ *               customer:
+ *                 type: object
+ *                 required: [name, telephone_number]
+ *                 properties:
+ *                   name: { type: string, example: John Doe }
+ *                   telephone_number: { type: string, example: "255700000000" }
+ *               item:
+ *                 type: object
+ *                 properties:
+ *                   type: { type: string, nullable: true }
+ *                   brand: { type: string, nullable: true }
+ *                   model: { type: string, nullable: true }
+ *                   serial_number: { type: string, nullable: true }
+ *               issue_description:
+ *                 type: string
+ *                 example: Screen not turning on
+ *               message:
+ *                 type: string
+ *                 nullable: true
+ *                 description: If provided and BEEM is enabled, sends SMS to customer.telephone_number
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 repair:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/UnauthorizedError' }
+ *       403:
+ *         description: Not a workspace member
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ForbiddenError' }
+ *       422:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ValidationErrors' }
+ */
 router.post(
   '/',
   [
@@ -85,6 +222,70 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * /repair/v1/workspaces/{workspace_id}/repairs/{repair_id}/complete:
+ *   post:
+ *     tags:
+ *       - Repairs
+ *     summary: Mark repair as completed (optionally sends SMS)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: workspace_id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: repair_id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 nullable: true
+ *                 description: If provided and BEEM is enabled, sends SMS to the customer
+ *     responses:
+ *       200:
+ *         description: Completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 repair:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     status: { type: string, example: completed }
+ *                     completed_at: { type: string, format: date-time, nullable: true }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/UnauthorizedError' }
+ *       403:
+ *         description: Not a workspace member
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ForbiddenError' }
+ *       404:
+ *         description: Repair not found
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/StandardError' }
+ *       422:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ValidationErrors' }
+ */
 router.post(
   '/:repair_id/complete',
   [
@@ -132,6 +333,68 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * /repair/v1/workspaces/{workspace_id}/repairs/{repair_id}/message:
+ *   post:
+ *     tags:
+ *       - Repairs
+ *     summary: Send SMS to repair customer (no status change)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: workspace_id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: repair_id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [message]
+ *             properties:
+ *               message: { type: string, example: Your device is ready for pickup. }
+ *     responses:
+ *       200:
+ *         description: Sent (or attempted)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok: { type: boolean, example: true }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/UnauthorizedError' }
+ *       403:
+ *         description: Not a workspace member
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ForbiddenError' }
+ *       404:
+ *         description: Repair not found
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/StandardError' }
+ *       422:
+ *         description: Missing customer telephone number or validation errors
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/StandardError' }
+ *       502:
+ *         description: SMS provider error
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/StandardError' }
+ */
 router.post(
   '/:repair_id/message',
   [
@@ -161,6 +424,59 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * /repair/v1/workspaces/{workspace_id}/repairs/{repair_id}/activity:
+ *   get:
+ *     tags:
+ *       - Repairs
+ *     summary: List repair activity (history)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: workspace_id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: repair_id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Activity list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 activity:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       type: { type: string, example: status_changed }
+ *                       from_status: { type: string, nullable: true }
+ *                       to_status: { type: string, nullable: true }
+ *                       note: { type: string, nullable: true }
+ *                       created_at: { type: string, format: date-time }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/UnauthorizedError' }
+ *       403:
+ *         description: Not a workspace member
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ForbiddenError' }
+ *       404:
+ *         description: Repair not found
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/StandardError' }
+ */
 router.get('/:repair_id/activity', [requireAuth, requireWorkspaceMember], async (req, res) => {
   const repair = await repairRepository.getRepairById({
     id: req.params.repair_id,

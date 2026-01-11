@@ -8,6 +8,38 @@ const membersRoutes = require('./workspaces/members');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /repair/v1/workspaces:
+ *   get:
+ *     tags:
+ *       - Workspaces
+ *     summary: List workspaces for current user
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Workspace list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 workspaces:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       name: { type: string }
+ *                       role: { type: string, nullable: true, example: owner }
+ *       401:
+ *         description: Missing/invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
+ */
 router.get('/', [requireAuth], async (req, res) => {
   const memberships = await workspaceMemberRepository.listWorkspacesForUser({ user_id: req.me.user_id });
   const workspaceIds = memberships.map(m => m.workspace_id);
